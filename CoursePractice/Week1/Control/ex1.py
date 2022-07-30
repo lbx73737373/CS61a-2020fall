@@ -1,6 +1,6 @@
 def search(f):
 	"""
-		high order function, 接受的参数f是一个函数的别名
+		这是high order function, 接受的参数f是一个函数的别名
 	"""
 	x = 0
 	while f(x) == False:
@@ -12,3 +12,11 @@ def square(x):
 
 def positive(x):
 	return max(0, square(x)-100)
+
+
+def inverse(f):
+	"""
+	return g(y) such that g(f(x)) -> x
+	"""
+
+	return lambda y: search(lambda x: f(x) == y )

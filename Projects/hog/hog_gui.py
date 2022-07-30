@@ -8,7 +8,7 @@ from gui_files.common_server import route, start
 import hog
 import dice
 
-PORT = 31415
+PORT = 31414
 DEFAULT_SERVER = "https://hog.cs61a.org"
 GUI_FOLDER = "gui_files/"
 PATHS = {}

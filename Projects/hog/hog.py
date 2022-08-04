@@ -6,6 +6,7 @@ from ucb import main, trace, interact
 GOAL_SCORE = 100  # The goal of Hog is to score 100 points.
 FIRST_101_DIGITS_OF_PI = 31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679
 
+
 ######################
 # Phase 1: Simulator #
 ######################
@@ -38,7 +39,6 @@ def roll_dice(num_rolls, dice=six_sided):
     # END PROBLEM 1
 
 
-
 def free_bacon(score):
     """Return the points scored from rolling 0 dice (Free Bacon).
 
@@ -46,7 +46,6 @@ def free_bacon(score):
     """
     assert score < 100, 'The game should be over.'
     pi = FIRST_101_DIGITS_OF_PI
-
 
     # Trim pi to only (score + 1) digit(s)
     # BEGIN PROBLEM 2
@@ -155,16 +154,13 @@ def silence(score0, score1):
     """Announce nothing (see Phase 2)."""
     return silence
 
-def strategy0():
-    def strat0(score, opponent):
-        return opponent % 10
-    return strat0
 
-def strategy1():
-    def strat1(score, opponent):
-        return max((score // 10) - 4, 0)
-    return strat1
+def strategy0(score, opponent):
+    return opponent % 10
 
+
+def strategy1(score, opponent):
+    return max((score // 10) - 4, 0)
 
 
 def play(strategy0, strategy1, score0=0, score1=0, dice=six_sided,
@@ -191,10 +187,8 @@ def play(strategy0, strategy1, score0=0, score1=0, dice=six_sided,
         if who == 0:
             while True:
                 num2roll = strategy0(score0, score1)
-                # print(num2roll)
-                # print(take_turn(num2roll, score1, dice=dice))
                 score0 += take_turn(num2roll, score1, dice=dice)
-                # print(score0)
+                say = say(score0, score1)
                 if extra_turn(score0, score1) == False or max(score0, score1) >= goal:
                     who = other(who)
                     break
@@ -203,7 +197,7 @@ def play(strategy0, strategy1, score0=0, score1=0, dice=six_sided,
             while True:
                 num2roll = strategy1(score1, score0)
                 score1 += take_turn(num2roll, score0, dice=dice)
-                # print(score1)
+                say = say(score0, score1)
                 if extra_turn(score1, score0) == False or max(score0, score1) >= goal:
                     who = other(who)
                     break
@@ -240,6 +234,7 @@ def announce_lead_changes(last_leader=None):
     >>> f5 = f4(15, 13)
     Player 0 takes the lead by 2
     """
+
     def say(score0, score1):
         if score0 > score1:
             leader = 0
@@ -250,6 +245,7 @@ def announce_lead_changes(last_leader=None):
         if leader != None and leader != last_leader:
             print('Player', leader, 'takes the lead by', abs(score0 - score1))
         return announce_lead_changes(leader)
+
     return say
 
 
@@ -269,8 +265,10 @@ def both(f, g):
     Player 0 now has 10 and Player 1 now has 17
     Player 1 takes the lead by 7
     """
+    # course implementation
     def say(score0, score1):
         return both(f(score0, score1), g(score0, score1))
+
     return say
 
 
@@ -296,6 +294,25 @@ def announce_highest(who, last_score=0, running_high=0):
     assert who == 0 or who == 1, 'The who argument should indicate a player.'
     # BEGIN PROBLEM 7
     "*** YOUR CODE HERE ***"
+    def say(score0, score1):
+        if who == 0:
+            gap = score0 - last_score
+            if gap > running_high:
+                print(gap, 'point(s)! The most yet for Player', who)
+                return announce_highest(who, score0, gap)
+            else:
+                return announce_highest(who, score0, running_high)
+        # who == 1   
+        else:
+            gap = score1 - last_score
+            if gap > running_high:
+                print(gap, 'point(s)! The most yet for Player', who)
+                return announce_highest(who, score1, gap)
+            else:
+                return announce_highest(who, score1, running_high)
+            
+    return say
+
     # END PROBLEM 7
 
 
@@ -317,8 +334,10 @@ def always_roll(n):
     >>> strategy(99, 99)
     5
     """
+
     def strategy(score, opponent_score):
         return n
+
     return strategy
 
 
@@ -336,6 +355,17 @@ def make_averaged(original_function, trials_count=1000):
     """
     # BEGIN PROBLEM 8
     "*** YOUR CODE HERE ***"
+
+    def simulator(*args):
+        i = 0
+        temp = 0
+        while i != trials_count:
+            temp += original_function(*args)
+            i += 1
+
+        return temp / trials_count
+
+    return simulator
     # END PROBLEM 8
 
 
@@ -350,6 +380,17 @@ def max_scoring_num_rolls(dice=six_sided, trials_count=1000):
     """
     # BEGIN PROBLEM 9
     "*** YOUR CODE HERE ***"
+    num = 10
+    highest_num = 10
+    highest_score = 0
+    while num > 0:
+        temp = make_averaged(roll_dice, trials_count)(num, dice)
+        if temp > highest_score:
+            highest_num = num
+            highest_score = temp
+        num -= 1
+
+    return highest_num
     # END PROBLEM 9
 
 
@@ -393,13 +434,16 @@ def run_experiments():
     "*** You may add additional experiments as you wish ***"
 
 
-
 def bacon_strategy(score, opponent_score, cutoff=8, num_rolls=6):
     """This strategy rolls 0 dice if that gives at least CUTOFF points, and
     rolls NUM_ROLLS otherwise.
     """
     # BEGIN PROBLEM 10
-    return 6  # Replace this statement
+    expected = free_bacon(opponent_score)
+    if expected >= cutoff:
+        return 0
+    else:
+        return num_rolls
     # END PROBLEM 10
 
 
@@ -409,7 +453,14 @@ def extra_turn_strategy(score, opponent_score, cutoff=8, num_rolls=6):
     Otherwise, it rolls NUM_ROLLS.
     """
     # BEGIN PROBLEM 11
-    return 6  # Replace this statement
+
+    bacon = free_bacon(opponent_score)
+    if extra_turn(score+bacon, opponent_score) == True:
+        return 0
+    elif bacon >= cutoff:
+        return 0
+    else:
+        return num_rolls
     # END PROBLEM 11
 
 
@@ -421,6 +472,7 @@ def final_strategy(score, opponent_score):
     # BEGIN PROBLEM 12
     return 6  # Replace this statement
     # END PROBLEM 12
+
 
 ##########################
 # Command Line Interface #
